@@ -22,15 +22,17 @@ def read_apps(path):
     # utf-8-sig also accepts UTF-8 files with a BOM created by Windows PowerShell.
     with path.open(encoding="utf-8-sig", newline="") as stream:
         reader = csv.DictReader(stream, delimiter="\t")
-        if reader.fieldnames != ["Repository", "Project", "Folder"]:
+        if reader.fieldnames not in (["Repository", "Project", "Folder"],
+                                    ["Repository", "Project", "Folder", "DisplayName"]):
             raise ValueError(
-                "apps.txt needs the TAB-separated header: Repository, Project, Folder."
+                "apps.txt needs the TAB-separated header: Repository, Project, Folder, DisplayName. "
+                "The older three-column format is also accepted."
             )
         apps = []
         folders = set()
         for line, raw in enumerate(reader, start=2):
             if None in raw or any(value is None for value in raw.values()):
-                raise ValueError(f"apps.txt line {line}: expected exactly three columns.")
+                raise ValueError(f"apps.txt line {line}: column count does not match the header.")
             app = {key: value.strip() for key, value in raw.items()}
             if not any(app.values()):
                 continue
@@ -86,13 +88,33 @@ def build_site():
             if not base or base.group(1) != f"/{folder}/":
                 raise ValueError(f"{repository}: index.html must have <base href=\"/{folder}/\" />.")
             shutil.copytree(webroot, site / folder)
-            links.append(f'<li><a href="{folder}/">{html.escape(repository)}</a></li>')
+            label = app.get("DisplayName") or repository
+            links.append(
+                f'<a class="btn btn-primary app-button" href="{folder}/">'
+                f'{html.escape(label)}</a>'
+            )
 
+        title_file = ROOT / "page-title.txt"
+        title = (title_file.read_text(encoding="utf-8-sig").strip()
+                 if title_file.is_file() else "Combined PWA Experiment")
+        title = html.escape(title or "Combined PWA Experiment")
         (site / "index.html").write_text(
             '<!doctype html><html lang="en"><head><meta charset="utf-8">'
             '<meta name="viewport" content="width=device-width, initial-scale=1">'
-            '<title>Combined PWA Experiment</title></head><body>'
-            '<h1>Combined PWA Experiment</h1><ul>' + "".join(links) + '</ul></body></html>',
+            f'<title>{title}</title>'
+            '<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" '
+            'rel="stylesheet" '
+            'integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" '
+            'crossorigin="anonymous">'
+            '<style>'
+            '.app-grid{display:flex;flex-wrap:wrap;gap:1rem;align-items:stretch;}'
+            '.app-button{box-sizing:border-box;max-width:100%;min-width:0;font-size:2rem;'
+            'line-height:1.2;white-space:normal;overflow-wrap:anywhere;'
+            'display:flex;align-items:center;justify-content:center;}'
+            '</style></head><body>'
+            f'<main class="container py-4"><h1 class="mb-4">{title}</h1>'
+            '<nav class="app-grid" aria-label="Available apps">' + "".join(links) +
+            '</nav></main></body></html>',
             encoding="utf-8",
         )
         # Replace generated output only after the complete build has succeeded.
