@@ -1,0 +1,41 @@
+name: Build Combined PWAs
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# Build one complete snapshot at a time. Never cancel an active publication.
+concurrency:
+  group: combined-pwa-deployment
+  cancel-in-progress: false
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out deployment configuration
+        uses: actions/checkout@v7
+
+      - name: Install .NET 10 SDK
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Build apps listed in apps.txt
+        run: python3 scripts/build-site.py
+
+      # This action only writes static files to a branch.
+      # GitHub Pages does not need to be enabled. Render will serve this branch.
+      - name: Publish website files to render branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: render
+          publish_dir: ./site
+          force_orphan: true
+          commit_message: Publish combined PWAs

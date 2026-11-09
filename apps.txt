@@ -1,0 +1,3 @@
+﻿Repository	Project	Folder
+musictopia2/QRCodeExperiment	QRCodeExperiment.csproj	qrtools
+musictopia2/ScoringExperiment	ScoringExperiment.csproj	scoring
