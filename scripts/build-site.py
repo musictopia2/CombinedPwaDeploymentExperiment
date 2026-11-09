@@ -112,7 +112,7 @@ def build_site():
             'line-height:1.2;white-space:normal;overflow-wrap:anywhere;'
             'display:flex;align-items:center;justify-content:center;}'
             '</style></head><body>'
-            f'<main class="container py-4"><h1 class="mb-4">{title}</h1>'
+            f'<main class="container-fluid px-0 py-4"><h1 class="mb-4">{title}</h1>'
             '<nav class="app-grid" aria-label="Available apps">' + "".join(links) +
             '</nav></main></body></html>',
             encoding="utf-8",
