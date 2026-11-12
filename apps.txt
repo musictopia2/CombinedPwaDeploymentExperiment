@@ -1,4 +1,5 @@
 Repository	Project	Folder	DisplayName
-musictopia2/QRCodeExperiment	QRCodeExperiment.csproj	qrtools	QR Tools
-musictopia2/ScoringExperiment	ScoringExperiment.csproj	scoring	Scoring
-musictopia2/ThirdSiteExperiment	ThirdSiteExperiment.csproj	thirds	Third Experiment
+musictopia2/FirstPwaApp	FirstPwaApp.csproj	firstpwaapp	First Pwa App
+musictopia2/FourthPwaApp	FourthPwaApp.csproj	fourthpwaapp	Fourth Pwa App
+musictopia2/SecondPwaApp	SecondPwaApp.csproj	secondpwaapp	Second Pwa App
+musictopia2/ThirdPwaApp	ThirdPwaApp.csproj	thirdpwaapp	Third Pwa App
