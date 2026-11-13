@@ -33,12 +33,34 @@ def render_request(url, api_key, payload=None):
 
     try:
         with urllib.request.urlopen(request, timeout=30) as response:
-            return json.load(response)
+            body = response.read()
+            content_type = response.headers.get("Content-Type", "unspecified")
+
+            print(
+                f"Render API {request.method}: "
+                f"HTTP {response.status}; "
+                f"content type: {content_type}; "
+                f"response bytes: {len(body)}",
+                flush=True,
+            )
+
+            if not body.strip():
+                raise RuntimeError(
+                    "Render returned an empty response. "
+                    "The deployment request may have been accepted."
+                )
+
+            try:
+                return json.loads(body)
+            except (ValueError, UnicodeDecodeError):
+                raise RuntimeError(
+                    "Render returned a non-JSON response."
+                ) from None
+
     except urllib.error.HTTPError as error:
         raise RuntimeError(
             f"Render API request failed with HTTP {error.code}."
         ) from None
-
 
 def main():
     api_key = required_environment("RENDER_API_KEY")
