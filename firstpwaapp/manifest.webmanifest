@@ -1,0 +1,23 @@
+{
+  "name": "First Pwa App",
+  "short_name": "First Pwa App",
+  "id": "/firstpwaapp/",
+  "start_url": "/firstpwaapp/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#03173d",
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    },
+    {
+      "src": "icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    }
+  ],
+  "scope": "/firstpwaapp/"
+}
