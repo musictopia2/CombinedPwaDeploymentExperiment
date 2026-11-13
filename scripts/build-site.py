@@ -46,8 +46,6 @@ def read_apps(path):
                 raise ValueError(f"apps.txt line {line}: duplicate folder {app['Folder']}.")
             folders.add(app["Folder"])
             apps.append(app)
-    if not apps:
-        raise ValueError("apps.txt contains no apps.")
     return apps
 
 
