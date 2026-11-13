@@ -1,14 +1,28 @@
 name: Build Combined PWAs
 
+run-name: Build Combined PWAs ${{ inputs.request_id }}
+
 on:
   push:
     branches: [main]
+
   workflow_dispatch:
+    inputs:
+      clear_render_cache:
+        description: Clear Render build cache after publishing
+        required: false
+        default: false
+        type: boolean
+
+      request_id:
+        description: Identifier supplied by the management app
+        required: false
+        default: ''
+        type: string
 
 permissions:
   contents: write
 
-# Build one complete snapshot at a time. Never cancel an active publication.
 concurrency:
   group: combined-pwa-deployment
   cancel-in-progress: false
@@ -16,7 +30,8 @@ concurrency:
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
+
     steps:
       - name: Check out deployment configuration
         uses: actions/checkout@v7
@@ -29,8 +44,6 @@ jobs:
       - name: Build apps listed in apps.txt
         run: python3 scripts/build-site.py
 
-      # This action only writes static files to a branch.
-      # GitHub Pages does not need to be enabled. Render will serve this branch.
       - name: Publish website files to render branch
         uses: peaceiris/actions-gh-pages@v4
         with:
@@ -39,3 +52,11 @@ jobs:
           publish_dir: ./site
           force_orphan: true
           commit_message: Publish combined PWAs
+
+      - name: Clear Render build cache and deploy published files
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.clear_render_cache }}
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_ID: ${{ vars.RENDER_SERVICE_ID }}
+          RENDER_PUBLISH_BRANCH: render
+        run: python3 scripts/clear-render-cache.py
