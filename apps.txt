@@ -1,2 +1,4 @@
 Repository	Project	Folder	DisplayName
+musictopia2/FifthCombinedPublic	FifthCombinedPublic.csproj	fifthcombinedpublic	Fifth Combined Public
 musictopia2/FourthCombinedPublic	FourthCombinedPublic.csproj	fourthcombinedpublic	Fourth Combined Public
+musictopia2/SixthCombinedPublic	SixthCombinedPublic.csproj	sixthcombinedpublic	Sixth Combined Public
