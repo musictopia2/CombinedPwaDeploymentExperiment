@@ -6,6 +6,7 @@ site folder is published only after ALL apps have built successfully.
 
 import csv
 import html
+import json
 import os
 from pathlib import Path
 import re
@@ -16,6 +17,7 @@ import tempfile
 
 
 ROOT = Path(__file__).resolve().parent.parent
+BASE_HREF = re.compile(r"""(<base\b[^>]*?\s+href\s*=\s*)(["'])([^"']*)\2""", re.IGNORECASE)
 
 
 def read_apps(path):
@@ -53,6 +55,30 @@ def run(arguments):
     subprocess.run([str(argument) for argument in arguments], check=True)
 
 
+def configure_publish_path(webroot, base_path):
+    index = webroot / "index.html"
+    index_html = index.read_text(encoding="utf-8-sig")
+    updated_html, count = BASE_HREF.subn(
+        lambda match: f"{match[1]}{match[2]}{base_path}{match[2]}", index_html
+    )
+    if count != 1:
+        raise ValueError(f"{index}: expected exactly one <base> element with an href.")
+    if updated_html != index_html:
+        index.write_text(updated_html, encoding="utf-8")
+
+    manifest_path = webroot / "manifest.webmanifest"
+    if manifest_path.is_file():
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8-sig"))
+        if not isinstance(manifest, dict):
+            raise ValueError(f"{manifest_path}: expected a JSON object.")
+        path_settings = {"id": base_path, "start_url": base_path, "scope": base_path}
+        if any(manifest.get(key) != value for key, value in path_settings.items()):
+            manifest.update(path_settings)
+            manifest_path.write_text(
+                json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+            )
+
+
 def build_site():
     apps = read_apps(ROOT / "apps.txt")
     # All intermediate repositories and publish outputs stay outside this repo.
@@ -74,17 +100,20 @@ def build_site():
             ]
             if len(projects) != 1:
                 raise ValueError(f"Expected one {filename} in {repository}, found {len(projects)}.")
+            project = projects[0]
+            base_path = f"/{folder}/"
+            # Set the paths before publish generates the service worker's asset hashes.
+            configure_publish_path(project.parent / "wwwroot", base_path)
             published = work / "published" / folder
-            run(["dotnet", "publish", projects[0], "--configuration", "Release",
+            run(["dotnet", "publish", project, "--configuration", "Release",
                  "--output", published, "--nologo"])
             webroot = published / "wwwroot"
             index = webroot / "index.html"
             if not index.is_file():
                 raise ValueError(f"No published wwwroot/index.html for {repository}.")
-            base = re.search(r'<base\s+href=[\"\x27]([^\"\x27]+)[\"\x27]',
-                             index.read_text(encoding="utf-8-sig"), re.IGNORECASE)
-            if not base or base.group(1) != f"/{folder}/":
-                raise ValueError(f"{repository}: index.html must have <base href=\"/{folder}/\" />.")
+            base = BASE_HREF.search(index.read_text(encoding="utf-8-sig"))
+            if not base or base[3] != base_path:
+                raise ValueError(f'{repository}: published index.html must have <base href="{base_path}" />.')
             shutil.copytree(webroot, site / folder)
             label = app.get("DisplayName") or repository
             links.append(
